@@ -3,12 +3,21 @@
   "version": "0.0.1",
   "type": "module",
   "description": "The official e18e umbrella reporting library/CLI",
-  "main": "lib/main.js",
+  "bin": "./lib/cli-missing.js",
+  "exports": "./lib/index.js",
+  "imports": {
+    "#detect-and-pack": {
+      "types": "./src/detect-and-pack-node.ts",
+      "browser": "./lib/detect-and-pack-browser.js",
+      "default": "./lib/detect-and-pack-node.js"
+    }
+  },
   "files": [
     "lib",
     "!lib/test"
   ],
   "scripts": {
+    "cli": "node ./lib/cli.js",
     "clean": "premove lib coverage",
     "build:js": "npm run clean && tsc",
     "build": "npm run lint && npm run build:js",
@@ -34,7 +43,16 @@
     "url": "https://github.com/e18e/reporter/issues"
   },
   "homepage": "https://github.com/e18e/reporter#readme",
+  "dependencies": {
+    "@arethetypeswrong/core": "^0.17.4",
+    "@publint/pack": "^0.1.2",
+    "package-manager-detector": "^1.1.0",
+    "picocolors": "^1.1.1",
+    "publint": "^0.3.9",
+    "sade": "^1.8.1"
+  },
   "devDependencies": {
+    "@types/node": "^22.13.10",
     "@vitest/coverage-v8": "^3.0.9",
     "eslint": "^9.22.0",
     "premove": "^4.0.0",
