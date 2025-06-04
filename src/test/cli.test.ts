@@ -91,4 +91,11 @@ describe('CLI', () => {
     expect(code).toBe(0);
     expect(stdout).toContain('Files in tarball:');
   });
+
+  it('should display package report', async () => {
+    const {stdout, stderr, code} = await runCliProcess([mockTarballPath], tempDir);
+    expect(code).toBe(0);
+    expect(stdout).toMatchSnapshot();
+    expect(stderr).toMatchSnapshot();
+  });
 }); 
