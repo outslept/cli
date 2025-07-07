@@ -27,6 +27,7 @@ describe('analyzeDependencies (tarball)', () => {
       cjsDependencies: expect.any(Number),
       esmDependencies: expect.any(Number),
       installSize: expect.any(Number),
+      duplicateDependencies: expect.any(Number),
       packageName: 'test-package',
       version: '1.0.0'
     });
@@ -61,8 +62,10 @@ describe('analyzeDependencies (local)', () => {
       esmDependencies: 0,
       installSize: 0,
       packageName: 'test-package',
-      version: '1.0.0'
+      version: '1.0.0',
+      duplicateCount: 0
     });
+    expect(stats.duplicateDependencies).toBeUndefined();
   });
 
   it('should analyze dependencies correctly', async () => {
@@ -113,8 +116,10 @@ describe('analyzeDependencies (local)', () => {
       esmDependencies: 1, // esm-package
       installSize: expect.any(Number),
       packageName: 'test-package',
-      version: '1.0.0'
+      version: '1.0.0',
+      duplicateCount: 0
     });
+    expect(stats.duplicateDependencies).toBeUndefined();
   });
 
   it('should handle symlinks', async () => {
@@ -156,8 +161,10 @@ describe('analyzeDependencies (local)', () => {
       esmDependencies: 1,
       installSize: expect.any(Number),
       packageName: 'test-package',
-      version: '1.0.0'
+      version: '1.0.0',
+      duplicateCount: 0
     });
+    expect(stats.duplicateDependencies).toBeUndefined();
   });
 
   it('should handle missing node_modules', async () => {
@@ -178,7 +185,9 @@ describe('analyzeDependencies (local)', () => {
       esmDependencies: 0,
       installSize: 0,
       packageName: 'test-package',
-      version: '1.0.0'
+      version: '1.0.0',
+      duplicateCount: 0
     });
+    expect(stats.duplicateDependencies).toBeUndefined();
   });
 });
