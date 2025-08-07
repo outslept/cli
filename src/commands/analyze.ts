@@ -4,8 +4,8 @@ import * as prompts from '@clack/prompts';
 import c from 'picocolors';
 import {meta} from './analyze.meta.js';
 import {report} from '../index.js';
-import {logger} from '../cli.js';
 import type {PackType} from '../types.js';
+import {enableDebug} from '../logger.js';
 
 const allowedPackTypes: PackType[] = ['auto', 'npm', 'yarn', 'pnpm', 'bun'];
 
@@ -27,8 +27,10 @@ export async function run(ctx: CommandContext<typeof meta.args>) {
   let pack: PackType = ctx.values.pack;
   const logLevel = ctx.values['log-level'];
 
-  // Set the logger level based on the option
-  logger.level = logLevel;
+  // Enable debug output based on log level
+  if (logLevel === 'debug') {
+    enableDebug('e18e:*');
+  }
 
   prompts.intro('Analyzing...');
 
