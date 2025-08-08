@@ -229,12 +229,16 @@ export async function runDependencyAnalysis(
     }
 
     // Traverse dependencies
-    const allDeps = {...(depPkg.dependencies || {}), ...(depPkg.devDependencies || {})};
+    const allDeps = {
+      ...(depPkg.dependencies || {}),
+      ...(depPkg.devDependencies || {})
+    };
 
     const visited = new Set<string>();
 
     function dirOfVirtual(p: string): string {
-      if (p.endsWith('/package.json')) return p.slice(0, -'/package.json'.length);
+      if (p.endsWith('/package.json'))
+        return p.slice(0, -'/package.json'.length);
       if (p === 'package.json') return '';
       const idx = p.lastIndexOf('/');
       return idx === -1 ? '' : p.slice(0, idx);
@@ -245,7 +249,10 @@ export async function runDependencyAnalysis(
       return idx === -1 ? '' : dir.slice(0, idx);
     }
 
-    function resolveDepVirtual(depName: string, fromVirtual: string): string | undefined {
+    function resolveDepVirtual(
+      depName: string,
+      fromVirtual: string
+    ): string | undefined {
       let cur = dirOfVirtual(fromVirtual);
       while (true) {
         const prefix = cur ? cur + '/' : '';
