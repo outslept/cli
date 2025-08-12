@@ -1,4 +1,5 @@
 import colors from 'picocolors';
+import {analyzePackageModuleType} from '../compute-type.js';
 import type {
   PackageJsonLike,
   ReportPluginResult,
@@ -175,6 +176,8 @@ export async function runDependencyAnalysis(
     }
   };
 
+  let cjsDependencies = 0;
+  let esmDependencies = 0;
   const dependencyNodes: DependencyNode[] = [];
 
   // Recursively traverse dependencies
@@ -196,6 +199,17 @@ export async function runDependencyAnalysis(
       depth,
       packagePath
     });
+
+    // Only count CJS/ESM for non-root packages
+    if (depth > 0) {
+      const type = analyzePackageModuleType(depPkg);
+      if (type === 'cjs') cjsDependencies++;
+      if (type === 'esm') esmDependencies++;
+      if (type === 'dual') {
+        cjsDependencies++;
+        esmDependencies++;
+      }
+    }
 
     // Traverse dependencies
     const allDeps = {...depPkg.dependencies, ...depPkg.devDependencies};
@@ -282,6 +296,9 @@ export async function runDependencyAnalysis(
 
   // Detect duplicates from the collected dependency nodes
   const duplicateDependencies = detectDuplicates(dependencyNodes);
+
+  stats.dependencyCount.cjs = cjsDependencies;
+  stats.dependencyCount.esm = esmDependencies;
 
   if (duplicateDependencies.length > 0) {
     stats.dependencyCount.duplicate = duplicateDependencies.length;
