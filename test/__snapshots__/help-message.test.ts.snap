@@ -1,7 +1,7 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`--help command > prints the analyze command help 1`] = `
-"e18e (cli <version>)
+"[36me18e[39m (cli <version>)
 
 Analyze the project for any warnings or errors
 
@@ -18,7 +18,7 @@ OPTIONS:
 `;
 
 exports[`--help command > prints the migrate command help 1`] = `
-"e18e (cli <version>)
+"[36me18e[39m (cli <version>)
 
 Migrate from a package to a more performant alternative.
 
@@ -36,7 +36,7 @@ OPTIONS:
 `;
 
 exports[`--help command > prints the up to date help command 1`] = `
-"e18e (cli <version>)
+"[36me18e[39m (cli <version>)
 
 USAGE:
   cli [(anonymous)] <OPTIONS>

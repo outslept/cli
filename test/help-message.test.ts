@@ -9,6 +9,7 @@ describe('--help command', () => {
 
     const output = execSync(`node ${cliPath} --help`, {
       stdio: 'pipe',
+      env: { ...process.env, FORCE_COLOR: '0' }
     });
 
     expect(stripVersion(output.toString())).toMatchSnapshot();
@@ -19,6 +20,7 @@ describe('--help command', () => {
 
     const output = execSync(`node ${cliPath} analyze --help`, {
       stdio: 'pipe',
+      env: { ...process.env, FORCE_COLOR: '0' }
     });
 
     const cleanOutput = stripVersion(output.toString());
@@ -30,6 +32,7 @@ describe('--help command', () => {
 
     const output = execSync(`node ${cliPath} migrate --help`, {
       stdio: 'pipe',
+      env: { ...process.env, FORCE_COLOR: '0' }
     });
 
     const cleanOutput = stripVersion(output.toString());
@@ -41,6 +44,7 @@ describe('--help command', () => {
 
     const output = execSync(`node ${cliPath} --version`, {
       stdio: 'pipe',
+      env: { ...process.env, FORCE_COLOR: '0' }
     });
 
     expect(output.toString().trim()).toMatch(/^\d+\.\d+\.\d+(?:-\S+)?$/); /** major.minor.patch[-prerelease] */
