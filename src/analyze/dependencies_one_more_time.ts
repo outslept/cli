@@ -238,8 +238,6 @@ export async function runDependencyAnalysis(
         cjsDependencies++;
         esmDependencies++;
       }
-      if (type === 'faux') {}
-      if (type === 'dts') {}
     }
   }
 
