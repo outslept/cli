@@ -38,7 +38,7 @@ describe('runPublint', () => {
     return buffer.buffer.slice(
       buffer.byteOffset,
       buffer.byteOffset + buffer.byteLength
-    );
+    ) as ArrayBuffer;
   }
 
   it('should return empty result for non-TarballFileSystem', async () => {
