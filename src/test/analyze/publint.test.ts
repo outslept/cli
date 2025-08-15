@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { runPublint } from '../../analyze/publint.js';
-import { TarballFileSystem } from '../../tarball-file-system.js';
-import { LocalFileSystem } from '../../local-file-system.js';
-import { createTempDir, cleanupTempDir, createTestPackage } from '../utils.js';
-import { pack as packAsTarball } from '@publint/pack';
+import {describe, it, expect, beforeEach, afterEach} from 'vitest';
+import {runPublint} from '../../analyze/publint.js';
+import {TarballFileSystem} from '../../tarball-file-system.js';
+import {LocalFileSystem} from '../../local-file-system.js';
+import {createTempDir, cleanupTempDir, createTestPackage} from '../utils.js';
+import {pack as packAsTarball} from '@publint/pack';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
@@ -18,7 +18,10 @@ describe('runPublint', () => {
     await cleanupTempDir(tempDir);
   });
 
-  async function createTarballFromPackage(packageData: any, files: Record<string, string> = {}): Promise<ArrayBuffer> {
+  async function createTarballFromPackage(
+    packageData: any,
+    files: Record<string, string> = {}
+  ): Promise<ArrayBuffer> {
     await createTestPackage(tempDir, packageData);
 
     for (const [fileName, content] of Object.entries(files)) {
@@ -53,7 +56,7 @@ describe('runPublint', () => {
         name: 'test-package',
         version: '1.0.0',
         type: 'module',
-        main: './non-existent-file.js',
+        main: './non-existent-file.js'
       },
       {
         'index.js': 'export const test = "hello";'
@@ -94,7 +97,7 @@ describe('runPublint', () => {
     const result = await runPublint(fileSystem);
 
     expect(result.messages.length).toBeGreaterThan(0);
-    expect(result.messages.some(m => m.severity === 'error')).toBe(true);
+    expect(result.messages.some((m) => m.severity === 'error')).toBe(true);
   });
 
   it('should handle package without issues', async () => {
