@@ -4,17 +4,8 @@ import {LocalFileSystem} from '../local-file-system.js';
 import {TarballFileSystem} from '../tarball-file-system.js';
 import type {FileSystem} from '../file-system.js';
 import {Message, Options, ReportPlugin, Stat, Stats} from '../types.js';
-import {runAttw} from './attw.js';
-import {runPublint} from './publint.js';
 import {runReplacements} from './replacements.js';
 import {runDependencyAnalysis} from './dependencies.js';
-
-const plugins: ReportPlugin[] = [
-  runAttw,
-  runPublint,
-  runReplacements,
-  runDependencyAnalysis
-];
 
 async function computeInfo(fileSystem: FileSystem) {
   try {
@@ -64,6 +55,24 @@ export async function report(options: Options) {
     fileSystem = new TarballFileSystem(tarball);
   }
 
+  // Build plugin list
+  const plugins: ReportPlugin[] = [
+    // always on, no external deps
+    runDependencyAnalysis,
+    runReplacements
+  ];
+
+  // Optional plugins (disabled by default)
+  if (options.plugins?.attw) {
+    const {runAttw} = await import('./attw.js');
+    plugins.push(runAttw);
+  }
+  if (options.plugins?.publint) {
+    const {runPublint} = await import('./publint.js');
+    plugins.push(runPublint);
+  }
+
+  // Run plugins
   for (const plugin of plugins) {
     const result = await plugin(fileSystem);
 
@@ -79,11 +88,9 @@ export async function report(options: Options) {
       };
       if (result.stats.extraStats) {
         for (const stat of result.stats.extraStats) {
-          if (seenStatKeys.has(stat.name)) {
-            continue;
-          }
+          if (seenStatKeys.has(stat.name)) continue;
           seenStatKeys.add(stat.name);
-          result.stats.extraStats.push(stat);
+          extraStats.push(stat);
         }
       }
     }

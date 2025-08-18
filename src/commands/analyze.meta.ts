@@ -22,6 +22,16 @@ export const meta = {
       choices: ['debug', 'info', 'warn', 'error'],
       default: 'info',
       description: 'Set the log level (debug | info | warn | error)'
+    },
+    attw: {
+      type: 'boolean',
+      default: false,
+      description: 'Enable arethetypeswrong checks (optional plugin)'
+    },
+    publint: {
+      type: 'boolean',
+      default: false,
+      description: 'Enable publint checks (optional plugin)'
     }
   }
 } as const;

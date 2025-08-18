@@ -78,7 +78,14 @@ export async function run(ctx: CommandContext<typeof meta.args>) {
   }
 
   // Analyze
-  const {stats, messages} = await report({root, pack});
+  const {stats, messages} = await report({
+    root,
+    pack,
+    plugins: {
+      attw: !!ctx.values.attw,
+      publint: !!ctx.values.publint
+    }
+  });
 
   prompts.log.info('Summary');
 
