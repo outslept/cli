@@ -4,7 +4,8 @@ import type {
   PackageJsonLike,
   ReportPluginResult,
   Message,
-  Stats
+  Stats,
+  Options
 } from '../types.js';
 import {FileSystem} from '../file-system.js';
 import {normalizePath} from '../utils/path.js';
@@ -147,7 +148,8 @@ async function parsePackageJson(
 
 // Keep the existing tarball analysis for backward compatibility
 export async function runDependencyAnalysis(
-  fileSystem: FileSystem
+  fileSystem: FileSystem,
+  _options?: Options
 ): Promise<ReportPluginResult> {
   const packageFiles = await fileSystem.listPackageFiles();
   const rootDir = await fileSystem.getRootDir();

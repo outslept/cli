@@ -1,10 +1,17 @@
 import * as replacements from 'module-replacements';
+import type {ManifestModule, ModuleReplacement} from 'module-replacements';
 import {ReportPluginResult} from '../types.js';
 import type {FileSystem} from '../file-system.js';
 import {getPackageJson} from '../file-system-utils.js';
-import semverSatisfies from 'semver/functions/satisfies.js';
-import semverLessThan from 'semver/ranges/ltr.js';
-import {minVersion, validRange} from 'semver';
+import {resolve, dirname, basename} from 'node:path';
+import {
+  satisfies as semverSatisfies,
+  ltr as semverLessThan,
+  minVersion,
+  validRange
+} from 'semver';
+import {LocalFileSystem} from '../local-file-system.js';
+import type {Options} from '../types.js';
 
 /**
  * Generates a standard URL to the docs of a given rule
@@ -22,6 +29,42 @@ export function getDocsUrl(name: string): string {
  */
 export function getMdnUrl(path: string): string {
   return `https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/${path}`;
+}
+
+async function loadCustomManifests(
+  manifestPaths?: string[]
+): Promise<ModuleReplacement[]> {
+  if (!manifestPaths || manifestPaths.length === 0) {
+    return [];
+  }
+
+  const customReplacements: ModuleReplacement[] = [];
+
+  for (const manifestPath of manifestPaths) {
+    try {
+      const absolutePath = resolve(manifestPath);
+      const manifestDir = dirname(absolutePath);
+      const manifestFileName = basename(absolutePath);
+      const localFileSystem = new LocalFileSystem(manifestDir);
+      const manifestContent = await localFileSystem.readFile(
+        `/${manifestFileName}`
+      );
+      const manifest: ManifestModule = JSON.parse(manifestContent);
+
+      if (
+        manifest.moduleReplacements &&
+        Array.isArray(manifest.moduleReplacements)
+      ) {
+        customReplacements.push(...manifest.moduleReplacements);
+      }
+    } catch (error) {
+      console.warn(
+        `Warning: Failed to load custom manifest from ${manifestPath}: ${error}`
+      );
+    }
+  }
+
+  return customReplacements;
 }
 
 function isNodeEngineCompatible(
@@ -47,7 +90,8 @@ function isNodeEngineCompatible(
 }
 
 export async function runReplacements(
-  fileSystem: FileSystem
+  fileSystem: FileSystem,
+  options?: Options
 ): Promise<ReportPluginResult> {
   const result: ReportPluginResult = {
     messages: []
@@ -60,8 +104,18 @@ export async function runReplacements(
     return result;
   }
 
+  // Load custom manifests
+  const customReplacements = await loadCustomManifests(options?.manifest);
+
+  // Combine custom and built-in replacements
+  const allReplacements = [
+    ...customReplacements,
+    ...replacements.all.moduleReplacements
+  ];
+
   for (const name of Object.keys(packageJson.dependencies)) {
-    const replacement = replacements.all.moduleReplacements.find(
+    // Find replacement (custom replacements take precedence due to order)
+    const replacement = allReplacements.find(
       (replacement) => replacement.moduleName === name
     );
 
@@ -69,6 +123,7 @@ export async function runReplacements(
       continue;
     }
 
+    // Handle each replacement type using the same logic for both custom and built-in
     if (replacement.type === 'none') {
       result.messages.push({
         severity: 'warning',
@@ -101,17 +156,21 @@ export async function runReplacements(
         replacement.nodeVersion && !enginesNode
           ? ` Required Node >= ${replacement.nodeVersion}.`
           : '';
+      const message = `Module "${name}" can be replaced with native functionality. Use "${replacement.replacement}" instead.${requires}`;
+      const fullMessage = `${message} You can read more at ${mdnPath}.`;
       result.messages.push({
         severity: 'warning',
         score: 0,
-        message: `Module "${name}" can be replaced with native functionality. Use "${replacement.replacement}" instead. You can read more at ${mdnPath}.${requires}`
+        message: fullMessage
       });
     } else if (replacement.type === 'documented') {
       const docUrl = getDocsUrl(replacement.docPath);
+      const message = `Module "${name}" can be replaced with a more performant alternative.`;
+      const fullMessage = `${message} See the list of available alternatives at ${docUrl}.`;
       result.messages.push({
         severity: 'warning',
         score: 0,
-        message: `Module "${name}" can be replaced with a more performant alternative. See the list of available alternatives at ${docUrl}.`
+        message: fullMessage
       });
     }
   }

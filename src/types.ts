@@ -18,6 +18,7 @@ export type PackType =
 export interface Options {
   root?: string;
   pack?: PackType;
+  manifest?: string[];
 }
 
 export interface StatLike<T> {
@@ -72,5 +73,6 @@ export interface ReportPluginResult {
 }
 
 export type ReportPlugin = (
-  fileSystem: FileSystem
+  fileSystem: FileSystem,
+  options?: Options
 ) => Promise<ReportPluginResult>;

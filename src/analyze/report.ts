@@ -65,7 +65,7 @@ export async function report(options: Options) {
   }
 
   for (const plugin of plugins) {
-    const result = await plugin(fileSystem);
+    const result = await plugin(fileSystem, options);
 
     for (const message of result.messages) {
       messages.push(message);
