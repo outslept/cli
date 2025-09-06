@@ -1,16 +1,16 @@
-import type { FileSystem } from "./file-system.js";
-import type { Message, Options, ReportPlugin, Stat, Stats } from "./types.js";
+import type {FileSystem} from './file-system.js';
+import type {Message, Options, ReportPlugin, Stat, Stats} from './types.js';
 
 interface PluginTiming {
- name: string;
- ms: number;
- error?: unknown;
+  name: string;
+  ms: number;
+  error?: unknown;
 }
 
 interface RunPluginsResult {
- messages: Message[];
- stats: Stats;
- timings: PluginTiming[];
+  messages: Message[];
+  stats: Stats;
+  timings: PluginTiming[];
 }
 
 function defaultStats(): Stats {
@@ -38,7 +38,7 @@ export async function runPlugins(
   const timings: PluginTiming[] = [];
 
   const extraStats: Stat[] = [...(baseStats?.extraStats ?? [])];
-  const seenExtra = new Set<string>(extraStats.map(s => s.name));
+  const seenExtra = new Set<string>(extraStats.map((s) => s.name));
 
   let stats: Stats = baseStats
     ? {...baseStats, extraStats}
