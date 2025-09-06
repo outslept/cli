@@ -26,7 +26,7 @@
   ],
   "scripts": {
     "cli": "node ./lib/cli.js",
-    "clean": "premove lib coverage",
+    "clean": "rm -rf lib coverage",
     "build:js": "npm run clean && tsc",
     "build": "npm run lint && npm run build:js",
     "lint": "eslint src",
@@ -77,7 +77,6 @@
     "@vitest/coverage-v8": "^3.2.3",
     "eslint": "^9.34.0",
     "pkg-pr-new": "^0.0.57",
-    "premove": "^4.0.0",
     "prettier": "^3.6.2",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.40.0",
