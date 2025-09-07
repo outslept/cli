@@ -1,5 +1,5 @@
-import {codemods} from 'module-replacements-codemods';
 import type {FileSystem} from './file-system.js';
+import type {Codemod, CodemodOptions} from 'module-replacements-codemods';
 
 export type PackType =
   | 'auto'
@@ -59,7 +59,7 @@ export interface Replacement {
   from: string;
   to: string;
   condition?: (filename: string, source: string) => Promise<boolean>;
-  factory: (typeof codemods)[keyof typeof codemods];
+  factory: (options: CodemodOptions) => Codemod;
 }
 
 export interface ReportPluginResult {
