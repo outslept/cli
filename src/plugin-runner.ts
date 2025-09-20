@@ -1,82 +1,54 @@
 import type {FileSystem} from './file-system.js';
-import type {Message, Options, ReportPlugin, Stat, Stats} from './types.js';
-
-interface PluginTiming {
-  name: string;
-  ms: number;
-  error?: unknown;
-}
+import type {Message, Options, ReportPlugin, Stats} from './types.js';
 
 interface RunPluginsResult {
   messages: Message[];
   stats: Stats;
-  timings: PluginTiming[];
 }
 
-function defaultStats(): Stats {
-  return {
-    name: 'unknown',
-    version: 'unknown',
-    dependencyCount: {
-      production: 0,
-      development: 0,
-      cjs: 0,
-      esm: 0,
-      duplicate: 0
-    },
-    extraStats: []
-  };
+function updateStats(target: Stats, patch: Partial<Stats>, seenExtra: Set<string>) {
+  if (patch.name) target.name = patch.name;
+  if (patch.version) target.version = patch.version;
+  if (patch.installSize !== undefined) target.installSize = patch.installSize;
+
+  if (patch.dependencyCount) {
+    target.dependencyCount = {
+      ...target.dependencyCount,
+      ...patch.dependencyCount
+    };
+  }
+
+  if (patch.extraStats?.length) {
+    const dst = target.extraStats ??= [];
+    for (const st of patch.extraStats) {
+      if (seenExtra.has(st.name)) continue;
+      seenExtra.add(st.name);
+      dst.push(st);
+    }
+  }
 }
 
 export async function runPlugins(
   fileSystem: FileSystem,
   plugins: ReportPlugin[],
-  options?: Options,
-  baseStats?: Stats
+  baseStats: Stats,
+  options?: Options
 ): Promise<RunPluginsResult> {
   const messages: Message[] = [];
-  const timings: PluginTiming[] = [];
+  const stats = baseStats;
+  stats.extraStats ??= [];
 
-  const extraStats: Stat[] = [...(baseStats?.extraStats ?? [])];
-  const seenExtra = new Set<string>(extraStats.map((s) => s.name));
-
-  let stats: Stats = baseStats
-    ? {...baseStats, extraStats}
-    : {...defaultStats(), extraStats};
+  const seenExtra = new Set<string>(stats.extraStats.map((s) => s.name));
 
   for (const plugin of plugins) {
-    const label = plugin.name || 'anonymous';
-    const start = Date.now();
+    const res = await plugin(fileSystem, options);
 
-    try {
-      const res = await plugin(fileSystem, options);
+    messages.push(...res.messages);
 
-      if (res.messages?.length) {
-        messages.push(...res.messages);
-      }
-
-      if (res.stats) {
-        stats = {
-          ...stats,
-          ...res.stats,
-          extraStats
-        };
-
-        if (res.stats.extraStats?.length) {
-          for (const st of res.stats.extraStats) {
-            if (seenExtra.has(st.name)) continue;
-            seenExtra.add(st.name);
-            extraStats.push(st);
-          }
-        }
-      }
-
-      timings.push({name: label, ms: Date.now() - start});
-    } catch (error) {
-      timings.push({name: label, ms: Date.now() - start, error});
-      throw error;
+    if (res.stats) {
+      updateStats(stats, res.stats, seenExtra);
     }
   }
 
-  return {messages, stats, timings};
+  return {messages, stats};
 }

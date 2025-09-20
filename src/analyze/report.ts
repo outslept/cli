@@ -67,8 +67,8 @@ export async function report(options: Options) {
   const {messages, stats: aggregated} = await runPlugins(
     fileSystem,
     plugins,
+    baseStats,
     options,
-    baseStats
   );
 
   const info = await computeInfo(fileSystem);
