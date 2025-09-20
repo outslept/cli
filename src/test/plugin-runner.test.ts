@@ -13,8 +13,8 @@ const fsMock: FileSystem = {
 
 const depCounts = {production: 0, development: 0, cjs: 0, esm: 0, duplicate: 0};
 
-describe('plugin-runner', () => {
-  it('aggregates messages and merges stats with extraStats de-dup', async () => {
+describe('runPlugins', () => {
+  it('should aggregate messages and merge stats with extraStats de-dup', async () => {
     const pluginA: ReportPlugin = async () => ({
       messages: [{severity: 'warning', score: 0, message: 'A'}],
       stats: {
@@ -49,30 +49,22 @@ describe('plugin-runner', () => {
       extraStats: [{name: 'seed', value: 'seed'}]
     };
 
-    const {messages, stats, timings} = await runPlugins(
+    const {messages, stats} = await runPlugins(
       fsMock,
       [pluginA, pluginB, pluginC],
-      undefined,
       baseStats
     );
 
     expect(messages.map((m) => m.message)).toEqual(['A', 'B', 'C']);
-
     expect(stats.name).toBe('pkg-b');
     expect(stats.version).toBe('2.0.0');
 
     const names = stats.extraStats?.map((s) => s.name) ?? [];
     expect(new Set(names)).toEqual(new Set(['seed', 's1', 's2']));
     expect(names.filter((n) => n === 's1').length).toBe(1);
-
-    expect(timings).toHaveLength(3);
-    for (const t of timings) {
-      expect(typeof t.name).toBe('string');
-      expect(t.ms).toBeGreaterThanOrEqual(0);
-    }
   });
 
-  it('does not mutate extraStats and uses a shared extraStats for aggregation', async () => {
+  it('should use shared extraStats array and preserve seed when no plugin stats', async () => {
     const baseStats: Stats = {
       name: 'unknown',
       version: 'unknown',
@@ -82,14 +74,14 @@ describe('plugin-runner', () => {
 
     const noop: ReportPlugin = async () => ({messages: []});
 
-    const {stats} = await runPlugins(fsMock, [noop], undefined, baseStats);
+    const {stats} = await runPlugins(fsMock, [noop], baseStats);
 
-    expect(stats.extraStats).not.toBe(baseStats.extraStats);
-    expect(stats.extraStats?.map((s) => s.name)).toContain('seed');
+    expect(stats.extraStats).toBe(baseStats.extraStats);
+    expect(stats.extraStats?.map((s) => s.name)).toEqual(['seed']);
     expect(baseStats.extraStats?.map((s) => s.name)).toEqual(['seed']);
   });
 
-  it('propagates errors from plugins', async () => {
+  it('should propagate plugin errors', async () => {
     const ok: ReportPlugin = async () => ({
       messages: [{severity: 'warning', score: 0, message: 'ok'}],
       stats: {
@@ -105,7 +97,7 @@ describe('plugin-runner', () => {
     };
 
     await expect(
-      runPlugins(fsMock, [ok, boom], undefined, {
+      runPlugins(fsMock, [ok, boom], {
         name: 'unknown',
         version: 'unknown',
         dependencyCount: depCounts,
@@ -114,11 +106,19 @@ describe('plugin-runner', () => {
     ).rejects.toThrow('boom');
   });
 
-  it('returns default stats when no baseStats provided', async () => {
+  it('should return provided baseStats when plugins only emit messages', async () => {
     const onlyMsgs: ReportPlugin = async () => ({
       messages: [{severity: 'warning', score: 0, message: 'M'}]
     });
-    const {stats, messages} = await runPlugins(fsMock, [onlyMsgs]);
+
+    const baseStats: Stats = {
+      name: 'unknown',
+      version: 'unknown',
+      dependencyCount: depCounts,
+      extraStats: []
+    };
+
+    const {stats, messages} = await runPlugins(fsMock, [onlyMsgs], baseStats);
 
     expect(messages).toHaveLength(1);
     expect(stats.name).toBe('unknown');
@@ -127,25 +127,38 @@ describe('plugin-runner', () => {
     expect(stats.extraStats).toEqual([]);
   });
 
-  it('merges stats when plugin provides stats without extraStats', async () => {
+  it('should merge stats when plugin provides stats without extraStats', async () => {
     const plugin: ReportPlugin = async () => ({
       messages: [],
       stats: {
         name: 'p',
         version: '1',
         dependencyCount: depCounts
-        // extraStats intentionally omitted
       }
     });
-    const {stats} = await runPlugins(fsMock, [plugin]);
+
+    const baseStats: Stats = {
+      name: 'unknown',
+      version: 'unknown',
+      dependencyCount: depCounts
+    };
+
+    const {stats} = await runPlugins(fsMock, [plugin], baseStats);
     expect(stats.name).toBe('p');
+    expect(stats.version).toBe('1');
     expect(stats.extraStats).toEqual([]);
   });
 
-  it('handles empty plugin list', async () => {
-    const {messages, stats, timings} = await runPlugins(fsMock, []);
+  it('should handle empty plugin list', async () => {
+    const baseStats: Stats = {
+      name: 'unknown',
+      version: 'unknown',
+      dependencyCount: depCounts,
+      extraStats: []
+    };
+
+    const {messages, stats} = await runPlugins(fsMock, [], baseStats);
     expect(messages).toEqual([]);
-    expect(timings).toEqual([]);
     expect(stats.name).toBe('unknown');
     expect(stats.extraStats).toEqual([]);
   });
