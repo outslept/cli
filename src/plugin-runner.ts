@@ -6,7 +6,11 @@ interface RunPluginsResult {
   stats: Stats;
 }
 
-function updateStats(target: Stats, patch: Partial<Stats>, seenExtra: Set<string>) {
+function updateStats(
+  target: Stats,
+  patch: Partial<Stats>,
+  seenExtra: Set<string>
+) {
   if (patch.name) target.name = patch.name;
   if (patch.version) target.version = patch.version;
   if (patch.installSize !== undefined) target.installSize = patch.installSize;
@@ -19,7 +23,7 @@ function updateStats(target: Stats, patch: Partial<Stats>, seenExtra: Set<string
   }
 
   if (patch.extraStats?.length) {
-    const dst = target.extraStats ??= [];
+    const dst = (target.extraStats ??= []);
     for (const st of patch.extraStats) {
       if (seenExtra.has(st.name)) continue;
       seenExtra.add(st.name);

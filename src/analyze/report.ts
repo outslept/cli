@@ -68,7 +68,7 @@ export async function report(options: Options) {
     fileSystem,
     plugins,
     baseStats,
-    options,
+    options
   );
 
   const info = await computeInfo(fileSystem);
