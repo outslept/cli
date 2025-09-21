@@ -16,7 +16,6 @@ vi.mock('@publint/pack', () => {
   };
 });
 
-
 describe('TarballFileSystem', () => {
   beforeEach(() => {
     mockFiles = [
@@ -68,7 +67,9 @@ describe('TarballFileSystem', () => {
     const files = await tfs.listPackageFiles();
 
     expect(files).toContain(path.posix.join(root, 'package.json'));
-    expect(files).toContain(path.posix.join(root, 'node_modules/a/package.json'));
+    expect(files).toContain(
+      path.posix.join(root, 'node_modules/a/package.json')
+    );
     expect(files).toContain(
       path.posix.join(root, 'node_modules/a/node_modules/b/package.json')
     );
