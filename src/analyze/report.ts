@@ -3,11 +3,12 @@ import {analyzePackageModuleType} from '../compute-type.js';
 import {LocalFileSystem} from '../local-file-system.js';
 import {TarballFileSystem} from '../tarball-file-system.js';
 import type {FileSystem} from '../file-system.js';
-import type {Message, Options, ReportPlugin, Stat, Stats} from '../types.js';
+import type {Options, ReportPlugin, Stat, Stats, Message} from '../types.js';
 import {runAttw} from './attw.js';
 import {runPublint} from './publint.js';
 import {runReplacements} from './replacements.js';
 import {runDependencyAnalysis} from './dependencies.js';
+import {runPlugins} from '../plugin-runner.js';
 import {getPackageJson} from '../utils/package-json.js';
 
 const plugins: ReportPlugin[] = [
@@ -34,9 +35,9 @@ export async function report(options: Options) {
   const {root = process.cwd(), pack = 'auto'} = options ?? {};
 
   let fileSystem: FileSystem;
-  const messages: Message[] = [];
+
   const extraStats: Stat[] = [];
-  let stats: Stats = {
+  const stats: Stats = {
     name: 'unknown',
     version: 'unknown',
     dependencyCount: {
@@ -48,7 +49,7 @@ export async function report(options: Options) {
     },
     extraStats
   };
-  const seenStatKeys = new Set<string>();
+  const messages: Message[] = [];
 
   if (pack === 'none') {
     fileSystem = new LocalFileSystem(root);
@@ -64,30 +65,7 @@ export async function report(options: Options) {
     fileSystem = new TarballFileSystem(tarball);
   }
 
-  for (const plugin of plugins) {
-    const result = await plugin(fileSystem, options);
-
-    for (const message of result.messages) {
-      messages.push(message);
-    }
-
-    if (result.stats) {
-      stats = {
-        ...stats,
-        ...result.stats,
-        extraStats
-      };
-      if (result.stats.extraStats) {
-        for (const stat of result.stats.extraStats) {
-          if (seenStatKeys.has(stat.name)) {
-            continue;
-          }
-          seenStatKeys.add(stat.name);
-          result.stats.extraStats.push(stat);
-        }
-      }
-    }
-  }
+  await runPlugins(fileSystem, plugins, stats, messages, options);
 
   const info = await computeInfo(fileSystem);
 

@@ -1,4 +1,4 @@
-import {describe, it, expect} from 'vitest';
+import {describe, it, expect, afterEach, vi} from 'vitest';
 import {runReplacements} from '../analyze/replacements.js';
 import {LocalFileSystem} from '../local-file-system.js';
 import {join} from 'node:path';
@@ -8,6 +8,10 @@ import {dirname} from 'node:path';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 describe('Custom Manifests', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('should load and use custom manifest files', async () => {
     const testDir = join(__dirname, '../../test/fixtures/fake-modules');
     const fileSystem = new LocalFileSystem(testDir);
@@ -24,6 +28,7 @@ describe('Custom Manifests', () => {
   });
 
   it('should handle invalid manifest files gracefully', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const testDir = join(__dirname, '../../test/fixtures/fake-modules');
     const fileSystem = new LocalFileSystem(testDir);
     const invalidManifestPath = 'non-existent-file.json';
@@ -33,6 +38,11 @@ describe('Custom Manifests', () => {
     });
 
     expect(result.messages).toMatchSnapshot();
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining(
+        `Warning: Failed to load custom manifest from ${invalidManifestPath}:`
+      )
+    );
   });
 
   it('should prioritize custom replacements over built-in ones', async () => {
