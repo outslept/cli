@@ -1,7 +1,7 @@
 import {describe, it, expect} from 'vitest';
 import {runPlugins} from '../plugin-runner.js';
 import type {FileSystem} from '../file-system.js';
-import type {ReportPlugin, Stats} from '../types.js';
+import type {ReportPlugin, Stats, Message} from '../types.js';
 
 const fsMock: FileSystem = {
   getRootDir: async () => '/',
@@ -42,43 +42,42 @@ describe('runPlugins', () => {
       messages: [{severity: 'error', score: 0, message: 'C'}]
     });
 
-    const baseStats: Stats = {
+    const stats: Stats = {
       name: 'unknown',
       version: 'unknown',
       dependencyCount: depCounts,
       extraStats: [{name: 'seed', value: 'seed'}]
     };
+    const messages: Message[] = [];
 
-    const {messages, stats} = await runPlugins(
-      fsMock,
-      [pluginA, pluginB, pluginC],
-      baseStats
-    );
+    await runPlugins(fsMock, [pluginA, pluginB, pluginC], stats, messages);
 
     expect(messages.map((m) => m.message)).toEqual(['A', 'B', 'C']);
     expect(stats.name).toBe('pkg-b');
     expect(stats.version).toBe('2.0.0');
 
     const names = stats.extraStats?.map((s) => s.name) ?? [];
+
     expect(new Set(names)).toEqual(new Set(['seed', 's1', 's2']));
     expect(names.filter((n) => n === 's1').length).toBe(1);
   });
 
   it('should use shared extraStats array and preserve seed when no plugin stats', async () => {
-    const baseStats: Stats = {
+    const stats: Stats = {
       name: 'unknown',
       version: 'unknown',
       dependencyCount: depCounts,
       extraStats: [{name: 'seed', value: 'seed'}]
     };
+    const messages: Message[] = [];
 
     const noop: ReportPlugin = async () => ({messages: []});
 
-    const {stats} = await runPlugins(fsMock, [noop], baseStats);
+    await runPlugins(fsMock, [noop], stats, messages);
 
-    expect(stats.extraStats).toBe(baseStats.extraStats);
+    expect(stats.extraStats).toBe(stats.extraStats);
     expect(stats.extraStats?.map((s) => s.name)).toEqual(['seed']);
-    expect(baseStats.extraStats?.map((s) => s.name)).toEqual(['seed']);
+    expect(stats.extraStats?.map((s) => s.name)).toEqual(['seed']);
   });
 
   it('should propagate plugin errors', async () => {
@@ -97,12 +96,17 @@ describe('runPlugins', () => {
     };
 
     await expect(
-      runPlugins(fsMock, [ok, boom], {
-        name: 'unknown',
-        version: 'unknown',
-        dependencyCount: depCounts,
-        extraStats: []
-      })
+      runPlugins(
+        fsMock,
+        [ok, boom],
+        {
+          name: 'unknown',
+          version: 'unknown',
+          dependencyCount: depCounts,
+          extraStats: []
+        },
+        []
+      )
     ).rejects.toThrow('boom');
   });
 
@@ -111,14 +115,15 @@ describe('runPlugins', () => {
       messages: [{severity: 'warning', score: 0, message: 'M'}]
     });
 
-    const baseStats: Stats = {
+    const stats: Stats = {
       name: 'unknown',
       version: 'unknown',
       dependencyCount: depCounts,
       extraStats: []
     };
+    const messages: Message[] = [];
 
-    const {stats, messages} = await runPlugins(fsMock, [onlyMsgs], baseStats);
+    await runPlugins(fsMock, [onlyMsgs], stats, messages);
 
     expect(messages).toHaveLength(1);
     expect(stats.name).toBe('unknown');
@@ -137,27 +142,29 @@ describe('runPlugins', () => {
       }
     });
 
-    const baseStats: Stats = {
+    const stats: Stats = {
       name: 'unknown',
       version: 'unknown',
       dependencyCount: depCounts
     };
+    const messages: Message[] = [];
 
-    const {stats} = await runPlugins(fsMock, [plugin], baseStats);
+    await runPlugins(fsMock, [plugin], stats, messages);
     expect(stats.name).toBe('p');
     expect(stats.version).toBe('1');
-    expect(stats.extraStats).toEqual([]);
+    expect(stats.extraStats).toEqual(undefined);
   });
 
   it('should handle empty plugin list', async () => {
-    const baseStats: Stats = {
+    const stats: Stats = {
       name: 'unknown',
       version: 'unknown',
       dependencyCount: depCounts,
       extraStats: []
     };
+    const messages: Message[] = [];
 
-    const {messages, stats} = await runPlugins(fsMock, [], baseStats);
+    await runPlugins(fsMock, [], stats, messages);
     expect(messages).toEqual([]);
     expect(stats.name).toBe('unknown');
     expect(stats.extraStats).toEqual([]);

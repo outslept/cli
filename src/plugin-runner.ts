@@ -1,11 +1,6 @@
 import type {FileSystem} from './file-system.js';
 import type {Message, Options, ReportPlugin, Stats} from './types.js';
 
-interface RunPluginsResult {
-  messages: Message[];
-  stats: Stats;
-}
-
 function updateStats(
   target: Stats,
   patch: Partial<Stats>,
@@ -35,14 +30,12 @@ function updateStats(
 export async function runPlugins(
   fileSystem: FileSystem,
   plugins: ReportPlugin[],
-  baseStats: Stats,
+  stats: Stats,
+  messages: Message[],
   options?: Options
-): Promise<RunPluginsResult> {
-  const messages: Message[] = [];
-  const stats = baseStats;
-  stats.extraStats ??= [];
-
-  const seenExtra = new Set<string>(stats.extraStats.map((s) => s.name));
+): Promise<void> {
+  const extraStats = stats.extraStats ?? [];
+  const seenExtra = new Set<string>(extraStats.map((s) => s.name));
 
   for (const plugin of plugins) {
     const res = await plugin(fileSystem, options);
@@ -53,6 +46,4 @@ export async function runPlugins(
       updateStats(stats, res.stats, seenExtra);
     }
   }
-
-  return {messages, stats};
 }

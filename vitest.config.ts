@@ -4,6 +4,9 @@ export default defineConfig({
   plugins: [
   ],
   test: {
+    env: {
+      FORCE_COLOR: '1'
+    },
     reporters: 'dot',
     include: [
       'packages/**/*.test.ts',

@@ -3,7 +3,7 @@ import {analyzePackageModuleType} from '../compute-type.js';
 import {LocalFileSystem} from '../local-file-system.js';
 import {TarballFileSystem} from '../tarball-file-system.js';
 import type {FileSystem} from '../file-system.js';
-import type {Options, ReportPlugin, Stat, Stats} from '../types.js';
+import type {Options, ReportPlugin, Stat, Stats, Message} from '../types.js';
 import {runAttw} from './attw.js';
 import {runPublint} from './publint.js';
 import {runReplacements} from './replacements.js';
@@ -37,7 +37,7 @@ export async function report(options: Options) {
   let fileSystem: FileSystem;
 
   const extraStats: Stat[] = [];
-  const baseStats: Stats = {
+  const stats: Stats = {
     name: 'unknown',
     version: 'unknown',
     dependencyCount: {
@@ -49,6 +49,7 @@ export async function report(options: Options) {
     },
     extraStats
   };
+  const messages: Message[] = [];
 
   if (pack === 'none') {
     fileSystem = new LocalFileSystem(root);
@@ -64,14 +65,9 @@ export async function report(options: Options) {
     fileSystem = new TarballFileSystem(tarball);
   }
 
-  const {messages, stats: aggregated} = await runPlugins(
-    fileSystem,
-    plugins,
-    baseStats,
-    options
-  );
+  await runPlugins(fileSystem, plugins, stats, messages, options);
 
   const info = await computeInfo(fileSystem);
 
-  return {info, messages, stats: aggregated};
+  return {info, messages, stats};
 }

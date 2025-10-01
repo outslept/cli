@@ -31,12 +31,8 @@ export function getMdnUrl(path: string): string {
 }
 
 async function loadCustomManifests(
-  manifestPaths?: string[]
+  manifestPaths: string[]
 ): Promise<ModuleReplacement[]> {
-  if (!manifestPaths || manifestPaths.length === 0) {
-    return [];
-  }
-
   const customReplacements: ModuleReplacement[] = [];
 
   for (const manifestPath of manifestPaths) {
@@ -104,7 +100,9 @@ export async function runReplacements(
   }
 
   // Load custom manifests
-  const customReplacements = await loadCustomManifests(options?.manifest);
+  const customReplacements = options?.manifest
+    ? await loadCustomManifests(options.manifest)
+    : [];
 
   // Combine custom and built-in replacements
   const allReplacements = [
